@@ -369,3 +369,14 @@
 - `git diff --cached --check` 仅报告 `docs/ai-context/DECISIONS.md` 中既有 Markdown 强制换行的行尾双空格；未发现新增的结构性空白问题。
 - 修正文档中已过时的 PowerShell 7/目标验证状态后，已重新暂存 `AGENTS.md`、`README.md` 和 `CHANGELOG.md`；当前双环境状态记录与实际验证一致。
 - 尚未执行 commit、打标签、推送、发布或部署；阶段 7 尚未标记为 `accepted`。
+
+## 2026-09-24｜阶段 7：本地 v0.1.0 提交与标签完成
+
+- 用户已明确确认阶段 7 验收通过。
+- 在用户提供提交身份 `Vanny <teins1yi35@gmail.com>` 后，执行本地 commit：
+  - 提交哈希：`108fd008588a33e549e1ac1b222d5b911541b439`
+  - 提交信息：`Prepare ai_context_init v0.1.0 release`
+- 在该提交上创建本地标签 `v0.1.0`，标签指向提交 `108fd008588a33e549e1ac1b222d5b911541b439`。
+- 提交前再次确认暂存区为已审查的 15 个文件且无未暂存修改；提交后 Git 工作区干净。
+- 未移动已有标签，未执行 push、部署或远程发布。
+- 阶段 7 状态：`accepted`；v0.1.0 仅完成本地提交和本地标签，远程发布状态为未发布。
