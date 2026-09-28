@@ -505,3 +505,13 @@
 - README 的通用示例已移除开发者机器和用户账户专属路径，改用仓库相对路径、系统临时目录及 `pwsh.exe`；历史验证路径仅保留在事实记录中。
 - CHANGELOG 将 v0.2.0 明确标为 `Unreleased`，并把 v0.1.0 标为仅本地标签，未将本地标签描述成远程发布。
 - 本轮未产生、改变任何产品决策；仅规范化 DECISIONS 中既有 D-025 的段落格式并合并重复状态行，使完整 diff 检查通过。未执行 git add、commit、tag、push、部署或远程发布，未进入 v0.3.0。
+
+## 2026-09-28｜v0.2.0 发布元数据最终收口准备
+
+- 开始时工作区干净，release candidate commit 为 `4179ec8d1a5cf9573149c7210d9c20bcefd67f88`，提交信息为 `release: prepare v0.2.0 validation workflow`。
+- 用户授权创建一个小型 release-finalization commit，并在该最终提交上创建本地 annotated `v0.2.0` 标签；未授权 push、GitHub Release 或部署。
+- 将 CHANGELOG 的 v0.2.0 状态由 `Unreleased` 收口为发布日期 `2026-09-28`，未改写版本实际内容或历史版本。
+- CURRENT_STATE 仅同步 release-finalization 流程和远程发布边界；未修改 README、AGENTS、PLAN、DECISIONS、校验器或测试逻辑。
+- 本记录写入时最终元数据提交和 `v0.2.0` 标签尚未创建；提交哈希、tag object hash 和实际目标提交以随后 Git 操作及最终核查结果为准，避免文档自引用循环。
+- 最近正式验证继续作为发布证据：Windows PowerShell 5.1 与 PowerShell 7.6.6 均为 19/19，通过且 `CleanupResult=Passed`；因本轮未修改业务逻辑，无需重复完整矩阵。
+- 不进入 v0.3.0，不执行 push、远程发布或部署。
