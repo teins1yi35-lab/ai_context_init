@@ -2,7 +2,7 @@
 
 AI Context Init 是一个面向 Codex / AI Coding 项目的本地 PowerShell 工具。它在用户明确指定的项目目录中，安全创建一套独立的 AI 上下文文档，让新的 Codex 对话能够恢复项目规则、当前状态、历史决策和交接流程。
 
-项目目录名为 `ai_context_init`，当前发布目标为 `v0.1.0`。
+项目目录名为 `ai_context_init`。`v0.1.0` 已完成本地提交和标签，当前开发目标为只读审计版本 `v0.2.0`。
 
 ## v0.1.0 能做什么
 
@@ -36,14 +36,55 @@ v0.1.0 不提供或不执行以下能力：
 - `update-ai-context.ps1`（v0.3.0）
 - 自动 Git commit、发布或部署
 
+## v0.2.0 只读校验
+
+`validate-ai-context.ps1` 只审计用户明确指定的已存在目录，不修复、迁移、删除或改写目标项目。它只读取 v0.1.0 固定生成的 5 个上下文文档；清单外文件不会被扫描或报告。
+
+```powershell
+# 在 ai_context_init 仓库根目录中运行。
+$validator = Join-Path -Path (Get-Location) -ChildPath 'scripts\validate-ai-context.ps1'
+$target = 'C:\path\to\an-existing-project'
+
+& powershell.exe -NoProfile -ExecutionPolicy Bypass `
+    -File $validator `
+    -TargetPath $target
+
+$exitCode = $LASTEXITCODE
+Write-Output ("ExitCode: {0}" -f $exitCode)
+```
+
+每条审计结果包含文件、规则、`Passed` / `Warnings` / `Errors`、简短原因和处理建议，末尾包含各类数量及退出码。仅有 Warning 时退出码仍为 `0`；审计结果写入 stdout，参数错误、路径错误和无法完成审计的读取错误写入 stderr。本版本不提供 JSON 输出。
+
+| 退出码 | 校验含义 | 处理方式 |
+| ---: | --- | --- |
+| `0` | 审计完成且没有 Errors，允许只有 Warnings | 阅读 Warning 并按建议人工复核 |
+| `1` | 参数错误 | 显式传入唯一必填参数 `-TargetPath` |
+| `2` | 目标路径错误 | 确认目标存在且为目录 |
+| `3` | 审计完成并发现一个或多个 Errors | 按逐项建议人工处理后重新审计 |
+| `4` | 读取失败等运行错误，审计无法完成 | 检查文件读取权限或运行环境；不得把本次结果当作通过 |
+
+审计内容包括固定文件存在且非空、UTF-8、Schema Version、文件角色、必要字段、受管理标记、残留占位符和受控状态规则；CURRENT_STATE 明显过长以及 HANDOFF 明确复制动态状态只产生 Warning。额外字段允许存在，Project Name 只检查必要字段是否存在，不强制与目录名匹配。
+
+可用正式隔离矩阵复核校验器。测试每次创建唯一系统临时目录，完成后自动清理，不操作真实项目：
+
+```powershell
+& powershell.exe -NoProfile -ExecutionPolicy Bypass `
+    -File '.\tests\validate-ai-context.matrix.ps1'
+
+& pwsh.exe `
+    -NoProfile -ExecutionPolicy Bypass `
+    -File '.\tests\validate-ai-context.matrix.ps1'
+```
+
 ## 环境与脚本位置
 
-目标平台是 Windows PowerShell 5.1 和 PowerShell 7。两个环境均已在隔离临时项目中完成功能验证；PowerShell 7 使用 `C:\Users\陈睿洁\AppData\Local\Microsoft\WindowsApps\pwsh.exe`，版本 `7.6.6`。
+目标平台是 Windows PowerShell 5.1 和 PowerShell 7。两个环境均已在隔离临时项目中完成功能验证，PowerShell 7 验证版本为 `7.6.6`。PowerShell 7 的可执行文件路径会随安装方式变化；通用命令使用 `pwsh.exe`。
 
 脚本位置：
 
 ```text
-D:\Codex_work\ai_context_init\scripts\init-ai-context.ps1
+scripts\init-ai-context.ps1
+scripts\validate-ai-context.ps1
 ```
 
 ## 第一次运行示例
@@ -51,8 +92,10 @@ D:\Codex_work\ai_context_init\scripts\init-ai-context.ps1
 下面的示例只使用隔离的临时测试项目。第一条命令创建测试目录，第二条命令显式把这个已经存在的目录传给 `-TargetPath`。
 
 ```powershell
-$toolScript = 'D:\Codex_work\ai_context_init\scripts\init-ai-context.ps1'
-$target = 'D:\Codex_work\_tmp_ai_context_readme_test'
+# 在 ai_context_init 仓库根目录中运行。
+$toolScript = Join-Path -Path (Get-Location) -ChildPath 'scripts\init-ai-context.ps1'
+$target = Join-Path -Path ([System.IO.Path]::GetTempPath()) `
+    -ChildPath ('ai-context-init-readme-{0}' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 
 if (-not [System.IO.Directory]::Exists($target)) {
     New-Item -ItemType Directory -Path $target -ErrorAction Stop | Out-Null
@@ -103,7 +146,7 @@ ExitCode: 0
 | 字段 | 含义 | 常见处理方式 |
 | --- | --- | --- |
 | `Created` | 本次成功创建的固定目标文件 | 检查生成内容和下一步状态 |
-| `Skipped` | 目标文件已存在，本次没有覆盖它 | 保留已有内容；如需结构审查，等待后续只读校验能力 |
+| `Skipped` | 目标文件已存在，本次没有覆盖它 | 保留已有内容；可使用 v0.2.0 只读校验器进行结构审查 |
 | `Warnings` | 非致命提醒，例如已有文件被跳过，或并发创建后安全跳过 | 阅读提醒并人工确认已有文件是否符合预期 |
 | `Failed` | 失败原因和具体文件或路径 | 根据错误类别和退出码处理；失败时不要把初始化当作成功 |
 
@@ -143,6 +186,6 @@ ExitCode: 0
 
 ## 当前版本边界
 
-`v0.2.0` 计划提供 `validate-ai-context.ps1` 的只读结构审计；`v0.3.0` 计划提供 `update-ai-context.ps1` 的结构化受控更新。这两个脚本不属于当前 v0.1.0 使用范围。
+`v0.2.0` 只提供 `validate-ai-context.ps1` 的只读结构审计，不自动修复或迁移目标文档。`v0.3.0` 才计划提供 `update-ai-context.ps1` 的结构化受控更新；该能力尚未实现。
 
-当前阶段 6 的使用说明正在等待用户验收。详细开发阶段和项目事实见 `docs/PLAN.md` 与 `docs/ai-context/CURRENT_STATE.md`。
+v0.2.0 阶段 4 已验收，本文件随已获授权的本地 release commit 提交；`v0.2.0` 标签尚未创建，也尚未 push、部署或创建远程发布。详细开发阶段和项目事实见 `docs/PLAN.md` 与 `docs/ai-context/CURRENT_STATE.md`。
